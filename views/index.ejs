@@ -13,14 +13,34 @@
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
             <h1 class="text text-red-600 text-lg" style="font-size: larger;">APPOINTMENT SCHEDULAR</h1>
-            <form action="" method="post">
-                Event Name : <input type="text" name="app-name" id="app-name"> <br> <br>
-                Start Time : <input type="datetime" name="start-time" id="start-time"> <br> <br>
-                End Time : <input type="time" name="end-time" id="end-time"> <br> <br>
+            <form action="/" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>"> 
+                Event Name : <input type="text" name="eventName" id="eventName"> <br> <br>
+                Start Time : <input type="time" name="startTime" id="startTime"> <br> <br>
+                End Time : <input type="time" name="endTime" id="endTime"> <br> <br>
                 <input class="bg-rose-600 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded" type="submit" value="Schedule">
             </form>
             <br>
             <h1 class="text text-red-600 text-lg" style="font-size: larger;">Scheduled Appointments</h1>
+            Total Appointments Scheduled Today : <%= appointments.length %>
+            <table class="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                <thead class="text-m text-gray-700 uppercase bg-rose-50 dark:bg-gray-700 dark:text-gray-400">
+                    <tr>
+                        <th style="text-align: center;"> Event Name </th>
+                        <th style="text-align: center;"> Start Time </th>
+                        <th style="text-align: center;"> End Time </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% for(var i=0; i<appointments.length; ++i) { %>
+                    <tr class="bg-gray border-b text-black dark:bg-gray-900 dark:border-gray-700">
+                        <td class="px-6 py-4"> <%= appointments[i].name %> </td>
+                        <td class="px-6 py-4"> <%= appointments[i].startTime %> </td>
+                        <td class="px-6 py-4"> <%= appointments[i].endTime %> </td>
+                    </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
 </body>
