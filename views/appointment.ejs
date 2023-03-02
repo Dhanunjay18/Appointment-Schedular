@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="./css/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>My Todo Mangement Application</title>
+    <script>
+        var token = document
+            .querySelector('meta[name="csrf-token"]')
+            .getAttribute("content");
+            // function updateTodo(id) {
+            function updateTodo(id, boolean_value) {   // Juz pass two parameters second one is boolean value
+                console.log("Here");
+                fetch(`/todos/${id}`, {                // Remove markAsCompleted and just keeep id
+                // fetch(`/todos/${id}/markAsCompleted`, {
+                method: "put",
+                headers: { 
+                    "Content-Type": "application/json" ,
+                },
+                body: JSON.stringify(
+                    {
+                        "_csrf": token,
+                        completed: boolean_value,  // As mentioned requirement we should pass boolean value in PUT method to check completed
+                    }
+                )
+            })
+            .then((res) => {
+                if(res.ok){
+                    window.location.reload();
+                }
+            })
+            .catch((err) => console.error(err)); 
+        }
+        function deleteTodo(id) {
+            fetch(`/todos/${id}`, {
+                method: "delete",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({ 
+                    "_csrf": token
+                })
+            })
+            .then((res) => {
+                if(res.ok) window.location.reload();
+            })
+            .catch((err) => console.error(err)); 
+        }
+    </script>
+</head>
+<body class="bg-blue-300">
+    <div class="grid grid-cols-6">
+        <div class="col-start-3 col-span-2">
+            <%- include('header.ejs') %>
+            <a href="/signout">Sign Out</a>
+            <form action="/todos" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+                <div class="flex py-2">
+                    <div class="flex-auto px-2">
+                        <input name="title" type="text" placeholder="Whats now" class="border border-solid text-black px-2 w-full rounded" />
+                    </div>
+                    <div class="flex-auto">
+                        <input name="dueDate" type="date" class="border leading-6 border-solid text-black px-2 w-full rounded"/>
+                    </div>
+                    <div class="flex-none px-2">
+                        <button type="submit" class="border rounded bg-rose-600 border-solid text-white px-2 w-full rounded">Add</button>                        
+                    </div>
+                </div>
+            </form>
+            <% if(messages && messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                        <li class="text-red-600"> <%= messages.error[i] %></li>
+                <% } %>
+              <% } %>
+            <div>
+                <%- include('todos.ejs', {title:'Overdue', data: overdue}) %>
+                <%- include('todos.ejs', {title:'Due Today', data: dueToday}) %>
+                <%- include('todos.ejs', {title:'Due Later', data: dueLater}) %>
+                <%- include('todos.ejs', {title:'Completed Items', data: completedItems}) %>
+            </div>
+    </div>
+</body>
+</html>

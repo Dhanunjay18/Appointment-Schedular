@@ -1,0 +1,20 @@
+{
+  "development": {
+    "username": "postgres",
+    "password": "DON",
+    "database": "schedule_db",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "test": {
+    "username": "postgres",
+    "password": "DON",
+    "database": "app-schedule-db",
+    "host": "127.0.0.1",
+    "dialect": "postgres"
+  },
+  "production": {
+    "use_env_variable": "DATABASE_URL",
+    "dialect": "postgres"
+  }
+}

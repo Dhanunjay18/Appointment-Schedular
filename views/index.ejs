@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>" />
+    <link href="./css/styles.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>APPOINTMENT SCHEDULAR</title>
+</head>
+<body class="bg-blue-300">
+    <div class="grid grid-cols-6">
+        <div class="col-start-3 col-span-2">
+            <h1 class="text text-red-600 text-lg" style="font-size: larger;">APPOINTMENT SCHEDULAR</h1>
+            <form action="" method="post">
+                Event Name : <input type="text" name="app-name" id="app-name"> <br> <br>
+                Start Time : <input type="datetime" name="start-time" id="start-time"> <br> <br>
+                End Time : <input type="time" name="end-time" id="end-time"> <br> <br>
+                <input class="bg-rose-600 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded" type="submit" value="Schedule">
+            </form>
+            <br>
+            <h1 class="text text-red-600 text-lg" style="font-size: larger;">Scheduled Appointments</h1>
+        </div>
+    </div>
+</body>
+</html>
