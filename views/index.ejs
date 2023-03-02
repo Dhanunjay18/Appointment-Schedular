@@ -17,7 +17,7 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>"> 
                 Event Name : <input type="text" name="eventName" id="eventName"> <br> <br>
                 Start Time : <input type="time" name="startTime" id="startTime"> <br> <br>
-                End Time : <input type="time" name="endTime" id="endTime"> <br> <br>
+                End Time : <input type="time" name="endTime" id="endTime"> <br> <br>         
                 <input class="bg-rose-600 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded" type="submit" value="Schedule">
             </form>
             <br>
@@ -41,6 +41,32 @@
                     <% } %>
                 </tbody>
             </table>
+        </div>
+        <div class="col-start-5 col-span-2">
+            <% if(messages.error && messages.error.length > 0)  { %>
+                <% for(var i=0; i<messages.error.length; i++) { %>
+                    <div role="alert">
+                        <div class="bg-red-500 text-white font-bold rounded-t px-4 py-2">
+                          Oops!
+                        </div>
+                        <div class="border border-t-0 border-red-400 rounded-b bg-red-100 px-4 py-3 text-red-700">
+                          <p><%= messages.error[i] %></p>
+                        </div>
+                      </div>     
+                <% } %>
+            <% } %>
+            <% if(messages.success && messages.success.length > 0)  { %>
+                <% for(var i=0; i<messages.success.length; i++) { %>
+                    <div role="alert">
+                        <div class="bg-green-500 text-white font-bold rounded-t px-4 py-2">
+                          Success!
+                        </div>
+                        <div class="border border-t-0 border-green-400 rounded-b bg-green-100 px-4 py-3 text-green-700">
+                          <p><%= messages.success[i] %></p>
+                        </div>
+                      </div>     
+                <% } %>
+            <% } %>
         </div>
     </div>
 </body>

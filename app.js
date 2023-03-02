@@ -20,6 +20,7 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser("Here is the Key"));
 app.use(csrf("this_should_be_32_character_long", ["POST", "PUT", "DELETE"]));
+app.use(session());
 app.use(flash());
 // app.use(csrf("this_should_be_32_character_long"));
 
@@ -80,6 +81,7 @@ passport.deserializeUser((id, done) => {
 });
 
 app.get("/", async function (request, response) {
+  console.log("Get")  
   response.render("index", {
     csrfToken: request.csrfToken(),
     appointments: await Appointments.findAll(),
@@ -91,20 +93,25 @@ app.post("/", async function (request, response) {
     const name = request.body.eventName;
     const startTime = request.body.startTime;
     const endTime = request.body.endTime;
+    console.log("Post")
+    if(name.length===0 || startTime===null || endTime===null){
+      console.log(name, " ", startTime, " ", endTime)
+      request.flash("error", "Fields Must not be Emtpy!");
+      return response.redirect("/");
+    }
+    if(startTime > endTime) {
+      request.flash("error", "Start Time must be less than End time!");
+      return response.redirect("/");
+    }
     await Appointments.destroy({where : {name: null}});
     await Appointments.create({
       name, startTime, endTime,
     })
-    response.render("index", {
-      csrfToken: request.body._csrf,
-      appointments: await Appointments.findAll(),
-    });
+    request.flash("success", "Appointment Scheduled Successfully!");
+    return response.redirect("/");
   } catch (error) {
     console.log("Error!");
-    response.render("index", {
-      csrfToken: request.body._csrf,
-      appointments: await Appointments.findAll(),
-    });
+    return response.redirect("/");
   }
 });
 module.exports = app;
