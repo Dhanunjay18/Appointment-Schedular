@@ -5,6 +5,9 @@ body {
   font-weight: bolder;
 }
 
-.Todo-item:hover .trash-icon {
+.Appointment-item:hover .trash-icon {
+  display: block;
+}
+.Appointment-item:hover .edit-icon {
   display: block;
 }

@@ -82,6 +82,7 @@ passport.deserializeUser((id, done) => {
 
 app.get("/", async function (request, response) {
   console.log("Get")  
+  request.flash("info", "Welcome to Appointment Schedular site!");
   response.render("index", {
     csrfToken: request.csrfToken(),
     appointments: await Appointments.findAll(),
