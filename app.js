@@ -22,7 +22,6 @@ app.use(cookieParser("Here is the Key"));
 app.use(csrf("this_should_be_32_character_long", ["POST", "PUT", "DELETE"]));
 app.use(session());
 app.use(flash());
-// app.use(csrf("this_should_be_32_character_long"));
 
 // eslint-disable-next-line no-undef
 app.use(express.static(path.join(__dirname, "public")));
@@ -113,6 +112,31 @@ app.post("/", async function (request, response) {
     return response.redirect("/");
   } catch (error) {
     request.flash("error", "Provide Start and End Time Properly!");
+    return response.redirect("/");
+  }
+});
+
+app.get('/:id/edit', async (req, res) => {  
+  const appointment = await Appointments.findOne({where : {id: req.params.id}});
+  // console.log(req.body._csrf);
+  res.render('editAppointment', { 
+    id: req.params.id, 
+    currName: appointment.name,
+    csrfToken: req.csrfToken(), 
+    messages: req.flash('info') 
+  });
+});
+
+app.post('/:id/edit', async (request, response) => {
+  try {
+    console.log("Came to put")
+    console.log(request.body.newName)
+    await Appointments.update({name : request.body.newName, }, {where : { id : request.params.id }});    
+    request.flash('success', 'Appointment updated successfully!');
+    return response.redirect("/");
+  } catch (err) {
+    console.error(err);
+    request.flash('error', 'Failed to update resource.');
     return response.redirect("/");
   }
 });
