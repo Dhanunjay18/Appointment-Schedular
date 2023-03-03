@@ -81,11 +81,12 @@ passport.deserializeUser((id, done) => {
 });
 
 app.get("/", async function (request, response) {
-  console.log("Get")  
-  request.flash("info", "Welcome to Appointment Schedular site!");
+  const successMessage = request.flash('success')[0];
+  console.log(successMessage)
   response.render("index", {
     csrfToken: request.csrfToken(),
     appointments: await Appointments.findAll(),
+    successMessage: successMessage, 
   });
 });
 
@@ -94,7 +95,7 @@ app.post("/", async function (request, response) {
     const name = request.body.eventName;
     const startTime = request.body.startTime;
     const endTime = request.body.endTime;
-    console.log("Post")
+    console.log(startTime)
     if(name.length===0 || startTime===null || endTime===null){
       console.log(name, " ", startTime, " ", endTime)
       request.flash("error", "Fields Must not be Emtpy!");
@@ -111,8 +112,22 @@ app.post("/", async function (request, response) {
     request.flash("success", "Appointment Scheduled Successfully!");
     return response.redirect("/");
   } catch (error) {
-    console.log("Error!");
+    request.flash("error", "Provide Start and End Time Properly!");
     return response.redirect("/");
   }
 });
+
+app.delete(
+  "/:id",
+  async function (request, response) {
+    console.log("We have to delete a Appointment with ID: ", request.params.id);
+    try {
+      const res = await Appointments.destroy({where : {id : request.params.id}});
+      request.flash('success', `Resource ${request.params.id} was deleted successfully`);
+      response.json({ success: true });
+    } catch (error) {
+      return response.status(422).json(error);
+    }
+  }
+);
 module.exports = app;
