@@ -37,6 +37,7 @@
             <h1 class="text text-red-600 text-lg" style="font-size: larger;">Current User : <%= userName %></h1>
             <form action="/appointments" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>"> 
+                <input type="hidden" name="uid" value="<%= uid %>"> 
                 Event Name : <input type="text" name="eventName" id="eventName"> <br> <br>
                 Start Time : <input type="time" name="startTime" id="startTime"> <br> <br>
                 End Time : <input type="time" name="endTime" id="endTime"> <br> <br>         

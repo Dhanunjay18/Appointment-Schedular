@@ -1,7 +1,8 @@
 /* eslint-disable no-unused-vars */
 const express = require("express");
 const app = express();
-const { Users, Todo, Appointments } = require("./models");
+const { Users, Appointments } = require("./models");
+const { Op } = require("sequelize");
 const csrf = require("tiny-csrf");
 var cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
@@ -13,6 +14,7 @@ const LocalStrategy = require("passport-local");
 const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const path = require("path");
+const { start } = require("repl");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(bodyParser.json());
@@ -161,7 +163,7 @@ app.post(
 );
 
 
-app.get("/appointments", async function (request, response) {
+app.get("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (request, response) {
   const successMessage = request.flash('success')[0];
   const u = await Users.findOne({where : {id : request.user.id }});
   console.log(successMessage)
@@ -170,15 +172,15 @@ app.get("/appointments", async function (request, response) {
     appointments: await Appointments.findAll(),
     successMessage: successMessage, 
     userName : u.firstName + " " + u.lastName,
+    uid : u.id,
   });
 });
 
-app.post("/appointments", async function (request, response) {
+app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (request, response) {
   try {
     const name = request.body.eventName;
     const startTime = request.body.startTime;
     const endTime = request.body.endTime;
-    console.log(startTime)
     if(name.length===0 || startTime===null || endTime===null){
       console.log(name, " ", startTime, " ", endTime)
       request.flash("error", "Fields Must not be Emtpy!");
@@ -188,9 +190,29 @@ app.post("/appointments", async function (request, response) {
       request.flash("error", "Start Time must be less than End time!");
       return response.redirect("/appointments");
     }
-    await Appointments.destroy({where : {name: null}});
+    const uid = request.user.id;
+    console.log("User ID : ", uid)
+    const chk = await Appointments.findAll({
+      where : {
+        [Op.or] : {
+          startTime : {
+            [Op.between]: [startTime, endTime], 
+          },
+          endTime: {
+            [Op.between]: [startTime, endTime], 
+          }
+        }
+      }
+    });
+    for(var i=0; i<chk.length; ++i) {
+      console.log(chk[i].id);
+    }
+    if(chk.length!=0){
+      request.flash("error", "Sorry! Provided Time Period is Clashing with another Appointments.");
+      return response.redirect("/appointments");
+    }
     await Appointments.create({
-      name, startTime, endTime,
+      name, startTime, endTime, uid : uid,
     })
     request.flash("success", "Appointment Scheduled Successfully!");
     return response.redirect("/appointments");
@@ -200,7 +222,7 @@ app.post("/appointments", async function (request, response) {
   }
 });
 
-app.get('/appointments/:id/edit', async (req, res) => {  
+app.get('/appointments/:id/edit',connectEnsureLogin.ensureLoggedIn(), async (req, res) => {  
   const appointment = await Appointments.findOne({where : {id: req.params.id}});
   // console.log(req.body._csrf);
   res.render('editAppointment', { 
@@ -211,7 +233,7 @@ app.get('/appointments/:id/edit', async (req, res) => {
   });
 });
 
-app.post('/appointments/:id/edit', async (request, response) => {
+app.post('/appointments/:id/edit',connectEnsureLogin.ensureLoggedIn(), async (request, response) => {
   try {
     console.log("Came to put")
     console.log(request.body.newName)
@@ -227,11 +249,12 @@ app.post('/appointments/:id/edit', async (request, response) => {
 
 app.delete(
   "/appointments/:id",
+  connectEnsureLogin.ensureLoggedIn(),
   async function (request, response) {
     console.log("We have to delete a Appointment with ID: ", request.params.id);
     try {
       const res = await Appointments.destroy({where : {id : request.params.id}});
-      request.flash('success', `Resource ${request.params.id} was deleted successfully`);
+      request.flash('success', `Appointment with id : ${request.params.id} was deleted successfully`);
       response.json({ success: true });
     } catch (error) {
       return response.status(422).json(error);
