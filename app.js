@@ -169,7 +169,14 @@ app.get("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (req
   console.log(successMessage)
   response.render("appointments", {
     csrfToken: request.csrfToken(),
-    appointments: await Appointments.findAll(),
+    appointments: await Appointments.findAll({
+      order: [
+        ['startTime'],
+      ],
+      where : {
+        uid : u.id,
+      }
+    }),
     successMessage: successMessage, 
     userName : u.firstName + " " + u.lastName,
     uid : u.id,
@@ -196,19 +203,32 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
       where : {
         [Op.or] : {
           startTime : {
-            [Op.between]: [startTime, endTime], 
+            [Op.gt]: startTime,
+            [Op.lt]: endTime, 
           },
           endTime: {
-            [Op.between]: [startTime, endTime], 
+            [Op.gt]: startTime,
+            [Op.lt]: endTime,
+          },
+          [Op.and] : {
+            startTime : {
+              [Op.eq] : startTime,
+            },
+            endTime : {
+              [Op.eq] : endTime,
+            }
           }
-        }
+        },
+        uid: uid,
       }
-    });
-    for(var i=0; i<chk.length; ++i) {
-      console.log(chk[i].id);
-    }
+    });    
     if(chk.length!=0){
-      request.flash("error", "Sorry! Provided Time Period is Clashing with another Appointments.");
+      var msg = "Sorry! Provided Time Period is Clashing with Appointment ids : [ ";
+      for(var i=0; i<chk.length; ++i) {
+        msg += chk[i].id + ", ";
+      }
+      msg += "]. Deletion of these Appointments enables you to schedule current Appointment."
+      request.flash("error", msg);
       return response.redirect("/appointments");
     }
     await Appointments.create({
