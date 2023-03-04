@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 const express = require("express");
 const app = express();
-const { User, Todo, Appointments } = require("./models");
+const { Users, Todo, Appointments } = require("./models");
 const csrf = require("tiny-csrf");
 var cookieParser = require("cookie-parser");
 const bodyParser = require("body-parser");
@@ -20,7 +20,7 @@ app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser("Here is the Key"));
 app.use(csrf("this_should_be_32_character_long", ["POST", "PUT", "DELETE"]));
-app.use(session());
+app.use(session()); 
 app.use(flash());
 
 // eslint-disable-next-line no-undef
@@ -48,7 +48,7 @@ passport.use(
       passwordField: "password",
     },
     (username, password, done) => {
-      User.findOne({ where: { email: username } })
+      Users.findOne({ where: { email: username } })
         .then(async function (user) {
           const result = await bcrypt.compare(password, user.password);
           if (result) {
@@ -67,10 +67,10 @@ passport.use(
 passport.serializeUser((user, done) => {
   console.log("Serializeing user in session ", user.id);
   done(null, user.id);
-});
+}); 
 
 passport.deserializeUser((id, done) => {
-  User.findByPk(id)
+  Users.findByPk(id)
     .then((user) => {
       done(null, user);
     })
@@ -79,17 +79,101 @@ passport.deserializeUser((id, done) => {
     });
 });
 
-app.get("/", async function (request, response) {
-  const successMessage = request.flash('success')[0];
-  console.log(successMessage)
-  response.render("index", {
+app.get("/signup", (request, response) => {
+  response.render("signup", {
+    title: "Signup",
     csrfToken: request.csrfToken(),
-    appointments: await Appointments.findAll(),
-    successMessage: successMessage, 
   });
 });
 
-app.post("/", async function (request, response) {
+app.post("/users", async (request, response) => {
+  const hashedPwd = await bcrypt.hash(request.body.password, saltRounds);
+  try {
+    const firstNameSize = Object.keys(request.body.firstName).length;
+    const lastNameSize = Object.keys(request.body.lastName).length;
+    const emailSize = Object.keys(request.body.email).length;
+    const passwordSize = Object.keys(request.body.password).length;
+    if (
+      firstNameSize == 0 ||
+      lastNameSize === 0 ||
+      emailSize == 0 ||
+      passwordSize === 0
+    ) {
+      request.flash("error", "The fields must not be empty!");
+      return response.redirect("/signup");
+    }
+    const chk = await Users.findOne({ where: { email: request.body.email } });
+    // console.log("check => ", chk)
+    if (chk != null) {
+      request.flash("error", "Email ALready exits");
+      return response.redirect("/signup");
+    }
+    const user = await Users.create({
+      firstName: request.body.firstName,
+      lastName: request.body.lastName,
+      email: request.body.email,
+      password: hashedPwd,
+    });
+    request.login(user, (err) => {
+      if (err) {
+        console.log(err);
+      }
+      return response.redirect("/appointments");
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
+app.get("/", async function (request, response) {
+  response.render("index", {
+    csrfToken: request.csrfToken(),
+  });
+});
+
+app.get("/signout", async (request, response, next) => {
+  request.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    return response.redirect("/");
+  });
+});
+
+app.get("/login", async (request, response) => {
+  response.render("login", {
+    title: "Login",
+    csrfToken: request.csrfToken(),
+  });
+});
+
+
+app.post(
+  "/session",
+  passport.authenticate("local", {
+    failureRedirect: "/login",
+    failureFlash: true,
+  }),
+  function (request, response) {
+    console.log(request.user);
+    response.redirect("/appointments");
+  }
+);
+
+
+app.get("/appointments", async function (request, response) {
+  const successMessage = request.flash('success')[0];
+  const u = await Users.findOne({where : {id : request.user.id }});
+  console.log(successMessage)
+  response.render("appointments", {
+    csrfToken: request.csrfToken(),
+    appointments: await Appointments.findAll(),
+    successMessage: successMessage, 
+    userName : u.firstName + " " + u.lastName,
+  });
+});
+
+app.post("/appointments", async function (request, response) {
   try {
     const name = request.body.eventName;
     const startTime = request.body.startTime;
@@ -98,25 +182,25 @@ app.post("/", async function (request, response) {
     if(name.length===0 || startTime===null || endTime===null){
       console.log(name, " ", startTime, " ", endTime)
       request.flash("error", "Fields Must not be Emtpy!");
-      return response.redirect("/");
+      return response.redirect("/appointments");
     }
     if(startTime > endTime) {
       request.flash("error", "Start Time must be less than End time!");
-      return response.redirect("/");
+      return response.redirect("/appointments");
     }
     await Appointments.destroy({where : {name: null}});
     await Appointments.create({
       name, startTime, endTime,
     })
     request.flash("success", "Appointment Scheduled Successfully!");
-    return response.redirect("/");
+    return response.redirect("/appointments");
   } catch (error) {
     request.flash("error", "Provide Start and End Time Properly!");
-    return response.redirect("/");
+    return response.redirect("/appointments");
   }
 });
 
-app.get('/:id/edit', async (req, res) => {  
+app.get('/appointments/:id/edit', async (req, res) => {  
   const appointment = await Appointments.findOne({where : {id: req.params.id}});
   // console.log(req.body._csrf);
   res.render('editAppointment', { 
@@ -127,22 +211,22 @@ app.get('/:id/edit', async (req, res) => {
   });
 });
 
-app.post('/:id/edit', async (request, response) => {
+app.post('/appointments/:id/edit', async (request, response) => {
   try {
     console.log("Came to put")
     console.log(request.body.newName)
     await Appointments.update({name : request.body.newName, }, {where : { id : request.params.id }});    
     request.flash('success', 'Appointment updated successfully!');
-    return response.redirect("/");
+    return response.redirect("/appointments");
   } catch (err) {
     console.error(err);
-    request.flash('error', 'Failed to update resource.');
-    return response.redirect("/");
+    request.flash('error', 'Failed to update Appointment.');
+    return response.redirect("/appointments");
   }
 });
 
 app.delete(
-  "/:id",
+  "/appointments/:id",
   async function (request, response) {
     console.log("We have to delete a Appointment with ID: ", request.params.id);
     try {

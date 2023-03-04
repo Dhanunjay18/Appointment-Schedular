@@ -39,7 +39,7 @@
     <div class="grid grid-cols-6">
         <div class="col-start-3 col-span-2">
             <h1 class="text text-red-600 text-lg" style="font-size: larger;">Update Event name <b> <%= currName %> </b>  to : </h1>
-            <form action="/<%=id%>/edit" method="post">
+            <form action="/appointments/<%=id%>/edit" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <br>
                 <input type="text" name="newName" id="newName"> <br> <br>
                 <input class="bg-rose-600 hover:bg-blue-700 text-black font-bold py-2 px-4 rounded" type="submit" value="Update">
