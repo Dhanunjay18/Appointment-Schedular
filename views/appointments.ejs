@@ -61,6 +61,7 @@
                     <% for(var i=0; i<appointments.length; ++i) { %>
                     <tr class="bg-gray border-b text-black dark:bg-gray-900 dark:border-gray-700">
                         <td class="px-6 py-4"> 
+                            <%= appointments[i].id %>                                               
                             <%= appointments[i].name %>                                               
                          </td>
                         <td class="px-6 py-4"> <%= appointments[i].startTime %> </td>

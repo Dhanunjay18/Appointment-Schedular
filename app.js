@@ -193,50 +193,97 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
       request.flash("error", "Fields Must not be Emtpy!");
       return response.redirect("/appointments");
     }
-    if(startTime > endTime) {
+    if(startTime >= endTime) {
       request.flash("error", "Start Time must be less than End time!");
       return response.redirect("/appointments");
     }
     const uid = request.user.id;
-    console.log("User ID : ", uid)
+    console.log("User ID : ", uid);
+    const appointments = await Appointments.findAll({
+      where : { uid : uid}
+    });
+    // const chk = await Appointments.findAll({
+    //   where : {
+    //     [Op.or] : {
+    //       startTime : {
+    //         [Op.gt]: startTime,
+    //         [Op.lt]: endTime, 
+    //       },
+    //       endTime: {
+    //         [Op.gt]: startTime,
+    //         [Op.lt]: endTime,
+    //       },
+    //       [Op.and] : {
+    //         startTime : {
+    //           [Op.eq] : startTime,
+    //         },
+    //         endTime : {
+    //           [Op.eq] : endTime,
+    //         }
+    //       }
+    //     },
+    //     uid: uid,
+    //   }
+    // });    
     const chk = await Appointments.findAll({
-      where : {
-        [Op.or] : {
-          startTime : {
-            [Op.gt]: startTime,
-            [Op.lt]: endTime, 
-          },
-          endTime: {
-            [Op.gt]: startTime,
-            [Op.lt]: endTime,
-          },
-          [Op.and] : {
-            startTime : {
-              [Op.eq] : startTime,
-            },
-            endTime : {
-              [Op.eq] : endTime,
-            }
-          }
-        },
-        uid: uid,
-      }
-    });    
+      where: {
+        startTime: { [Op.lt]: endTime },
+        endTime: { [Op.gt]: startTime },
+      },
+    });
+    /*
+      (("Appointments"."startTime" = '21:14' AND "Appointments"."endTime" = '21:20') OR ("Appointments"."startTime" > '21:14' AND "Appointments"."startTime" < '21:20') OR ("Appointments"."endTime" > '21:14' AND "Appointments"."endTime" < '21:20')) AND "Appointments"."uid" = 11;
+      10.00 - 10.15
+
+          9.50-10.00(Done)
+          9.50-10.05(Done)
+          9.50-10.15(Done)
+          9.50-10.20(Done)
+          10.00 - 10.15(Done)
+
+          10.05-10.20(Done)
+          10.05-10.10(Done)
+          10.00-10.20(Done)
+          10.15-10.20(Done)
+    */
+
+    var flag = 0;
     if(chk.length!=0){
       var msg = "Sorry! Provided Time Period is Clashing with Appointment ids : [ ";
-      for(var i=0; i<chk.length; ++i) {
-        msg += chk[i].id + ", ";
+      // for(var i=0; i<appointments.length; ++i) {
+      //   if(appointments[i].startTime>startTime && appointments[i].startTime < endTime){
+      //     flag = 1;
+      //     msg += appointments[i].id + ", "
+      //     console.log("11111")
+      //   }
+      //   else if(appointments[i].endTime>startTime-1 && appointments[i].endTime<endTime){
+      //     flag = 1;
+      //     msg += appointments[i].id + ", "
+      //     if(appointments[i].endTime>endTime)
+      //     console.log("appointments[i].endTime>endTime")
+      //     if(appointments[i].endTime>startTime)
+      //     console.log("appointments[i].endTime>startTime")
+      //   }
+      //   else if(appointments[i].startTime===startTime && appointments[i].endTime===endTime)
+      //   {
+      //     flag = 1;
+      //     msg += appointments[i].id + ", "
+      //     console.log("33333")
+      //   }
+      // }
+      // if(flag){
+        msg += "]. Deletion of these Appointments enables you to schedule current Appointment."
+        request.flash("error", msg);
+        return response.redirect("/appointments");
       }
-      msg += "]. Deletion of these Appointments enables you to schedule current Appointment."
-      request.flash("error", msg);
-      return response.redirect("/appointments");
-    }
+    // }
     await Appointments.create({
       name, startTime, endTime, uid : uid,
     })
     request.flash("success", "Appointment Scheduled Successfully!");
     return response.redirect("/appointments");
   } catch (error) {
+    console.log(error)
     request.flash("error", "Provide Start and End Time Properly!");
     return response.redirect("/appointments");
   }
@@ -257,6 +304,10 @@ app.post('/appointments/:id/edit',connectEnsureLogin.ensureLoggedIn(), async (re
   try {
     console.log("Came to put")
     console.log(request.body.newName)
+    if(request.body.oldName === request.body.newName){
+      request.flash('error', 'Enter the new Name which should not match with Old name');
+      return response.redirect("/appointments");  
+    }
     await Appointments.update({name : request.body.newName, }, {where : { id : request.params.id }});    
     request.flash('success', 'Appointment updated successfully!');
     return response.redirect("/appointments");
