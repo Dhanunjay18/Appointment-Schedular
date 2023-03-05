@@ -229,6 +229,7 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
       where: {
         startTime: { [Op.lt]: endTime },
         endTime: { [Op.gt]: startTime },
+        uid : uid,
       },
     });
     /*
@@ -272,6 +273,9 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
       //   }
       // }
       // if(flag){
+        for(var i=0; i<chk.length; ++i) {
+          msg += chk[i].id + ", ";
+        }
         msg += "]. Deletion of these Appointments enables you to schedule current Appointment."
         request.flash("error", msg);
         return response.redirect("/appointments");
