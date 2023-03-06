@@ -15,6 +15,7 @@ const bcrypt = require("bcrypt");
 const saltRounds = 10;
 const path = require("path");
 const { start } = require("repl");
+const { time } = require("console");
 app.set("views", path.join(__dirname, "views"));
 
 app.use(bodyParser.json());
@@ -188,6 +189,8 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
     const name = request.body.eventName;
     const startTime = request.body.startTime;
     const endTime = request.body.endTime;
+    const startTime1 = Number(startTime.split(":")[0]) * 60 + Number(startTime.split(":")[1]);
+    const endTime1 = Number(endTime.split(":")[0]) * 60 + Number(endTime.split(":")[1]);
     if(name.length===0 || startTime===null || endTime===null){
       console.log(name, " ", startTime, " ", endTime)
       request.flash("error", "Fields Must not be Emtpy!");
@@ -198,39 +201,19 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
       return response.redirect("/appointments");
     }
     const uid = request.user.id;
+    const chk1 = await Appointments.findAll({where : {uid: uid, name: name}});
+    if(chk1.length!=0) {
+      request.flash("error", "An appointment is already scheduled with the same name!");
+      return response.redirect("/appointments");      
+    }
     console.log("User ID : ", uid);
-    const appointments = await Appointments.findAll({
-      where : { uid : uid}
-    });
-    // const chk = await Appointments.findAll({
-    //   where : {
-    //     [Op.or] : {
-    //       startTime : {
-    //         [Op.gt]: startTime,
-    //         [Op.lt]: endTime, 
-    //       },
-    //       endTime: {
-    //         [Op.gt]: startTime,
-    //         [Op.lt]: endTime,
-    //       },
-    //       [Op.and] : {
-    //         startTime : {
-    //           [Op.eq] : startTime,
-    //         },
-    //         endTime : {
-    //           [Op.eq] : endTime,
-    //         }
-    //       }
-    //     },
-    //     uid: uid,
-    //   }
-    // });    
     const chk = await Appointments.findAll({
       where: {
         startTime: { [Op.lt]: endTime },
         endTime: { [Op.gt]: startTime },
         uid : uid,
       },
+      
     });
     /*
       (("Appointments"."startTime" = '21:14' AND "Appointments"."endTime" = '21:20') OR ("Appointments"."startTime" > '21:14' AND "Appointments"."startTime" < '21:20') OR ("Appointments"."endTime" > '21:14' AND "Appointments"."endTime" < '21:20')) AND "Appointments"."uid" = 11;
@@ -246,41 +229,39 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
           10.05-10.10(Done)
           10.00-10.20(Done)
           10.15-10.20(Done)
-    */
-
-    var flag = 0;
+  */
+    console.log("*********************************Duration : ", startTime1, "     ", endTime1)
     if(chk.length!=0){
-      var msg = "Sorry! Provided Time Period is Clashing with Appointment ids : [ ";
-      // for(var i=0; i<appointments.length; ++i) {
-      //   if(appointments[i].startTime>startTime && appointments[i].startTime < endTime){
-      //     flag = 1;
-      //     msg += appointments[i].id + ", "
-      //     console.log("11111")
-      //   }
-      //   else if(appointments[i].endTime>startTime-1 && appointments[i].endTime<endTime){
-      //     flag = 1;
-      //     msg += appointments[i].id + ", "
-      //     if(appointments[i].endTime>endTime)
-      //     console.log("appointments[i].endTime>endTime")
-      //     if(appointments[i].endTime>startTime)
-      //     console.log("appointments[i].endTime>startTime")
-      //   }
-      //   else if(appointments[i].startTime===startTime && appointments[i].endTime===endTime)
-      //   {
-      //     flag = 1;
-      //     msg += appointments[i].id + ", "
-      //     console.log("33333")
-      //   }
-      // }
-      // if(flag){
+      var msg = "Sorry! Provided Time Period is Clashing with Appointment Names : [ ";
+      var maxEnd = 0;
         for(var i=0; i<chk.length; ++i) {
-          msg += chk[i].id + ", ";
+          msg += chk[i].name + ", ";
+          maxEnd = Math.max(maxEnd, Number(chk[i].endTime.split(":")[0]) * 60 + Number(chk[i].endTime.split(":")[1]))
         }
         msg += "]. Deletion of these Appointments enables you to schedule current Appointment."
         request.flash("error", msg);
+
+        // Suggesting best time slot
+        const duration = endTime1 - startTime1;
+        for(i=maxEnd; i<=1440; i += duration) {
+            const st1 = Math.floor(i/60) + ":" + (i%60) + ":00";
+            const et1 = Math.floor((i+duration)/60) + ":" + ((i+duration)%60) + ":00";
+            console.log(st1, "           ", et1);
+            const chk = await Appointments.findAll({
+              where: {
+                startTime: { [Op.lt]: et1 },
+                endTime: { [Op.gt]: st1 },
+                uid : uid,
+              },
+            });
+            if(chk.length==0){
+              console.log("***************************8**************You can schedule the nearest time slot : " + st1 + " to " + et1);
+              request.flash("info", "You can schedule the next nearest available time slot with same duration : " + st1 + " to " + et1);
+              break;
+            }
+        }
         return response.redirect("/appointments");
       }
-    // }
     await Appointments.create({
       name, startTime, endTime, uid : uid,
     })
@@ -311,6 +292,13 @@ app.post('/appointments/:id/edit',connectEnsureLogin.ensureLoggedIn(), async (re
     if(request.body.oldName === request.body.newName){
       request.flash('error', 'Enter the new Name which should not match with Old name');
       return response.redirect("/appointments");  
+    }
+    const uid = request.user.id;
+    console.log(uid)
+    const chk1 = await Appointments.findAll({where : {uid: uid, name: request.body.newName}});
+    if(chk1.length!=0) {
+      request.flash("error", "An appointment is already scheduled with the same name!");
+      return response.redirect("/appointments");      
     }
     await Appointments.update({name : request.body.newName, }, {where : { id : request.params.id }});    
     request.flash('success', 'Appointment updated successfully!');

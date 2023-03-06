@@ -60,8 +60,7 @@
                 <tbody>
                     <% for(var i=0; i<appointments.length; ++i) { %>
                     <tr class="bg-gray border-b text-black dark:bg-gray-900 dark:border-gray-700">
-                        <td class="px-6 py-4"> 
-                            <%= appointments[i].id %>                                               
+                        <td class="px-6 py-4">                                               
                             <%= appointments[i].name %>                                               
                          </td>
                         <td class="px-6 py-4"> <%= appointments[i].startTime %> </td>
@@ -130,10 +129,10 @@
             <% if(messages.info && messages.info.length > 0)  { %>
                 <% for(var i=0; i<messages.info.length; i++) { %>
                     <div role="alert">
-                        <div class="bg-green-500 text-white font-bold rounded-t px-4 py-2">
+                        <div class="bg-blue-500 text-white font-bold rounded-t px-4 py-2">
                           Info!
                         </div>
-                        <div class="border border-t-0 border-green-400 rounded-b bg-green-100 px-4 py-3 text-green-700">
+                        <div class="border border-t-0 border-blue-400 rounded-b bg-blue-100 px-4 py-3 text-blue-700">
                           <p><%= messages.info[i] %></p>
                         </div>
                       </div>     
