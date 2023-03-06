@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="<%= csrfToken %>" />
     <link href="./css/styles.css" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    <title>APPOINTMENT SCHEDULAR</title>
+    <title>APPOINTMENT Scheduler</title>
     <script>
         var token = document
             .querySelector('meta[name="csrf-token"]')
@@ -33,7 +33,7 @@
 <body class="bg-blue-300">
     <div class="grid grid-cols-5">
         <div class="col-start-2 col-span-2">
-            <h1 class="text text-red-600 text-lg" style="font-size: larger;">APPOINTMENT SCHEDULAR</h1>
+            <h1 class="text text-red-600 text-lg" style="font-size: larger;">APPOINTMENT Scheduler</h1>
             <h1 class="text text-red-600 text-lg" style="font-size: larger;">Current User : <%= userName %></h1>
             <form action="/appointments" method="post">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>"> 
