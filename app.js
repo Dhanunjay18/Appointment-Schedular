@@ -243,7 +243,8 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
 
         // Suggesting best time slot
         const duration = endTime1 - startTime1;
-        for(i=maxEnd; i<=1440; i += duration) {
+        msg = "";
+        for(i=startTime1; i<=1440-duration; i++) {
             const st1 = Math.floor(i/60) + ":" + (i%60) + ":00";
             const et1 = Math.floor((i+duration)/60) + ":" + ((i+duration)%60) + ":00";
             console.log(st1, "           ", et1);
@@ -255,12 +256,30 @@ app.post("/appointments",connectEnsureLogin.ensureLoggedIn(), async function (re
               },
             });
             if(chk.length==0){
+              msg += st1 + " to " + et1 + " Lately or "
               console.log("***************************8**************You can schedule the nearest time slot : " + st1 + " to " + et1);
-              request.flash("info", "You can schedule the next nearest available time slot with same duration : " + st1 + " to " + et1);
               break;
             }
         }
-        return response.redirect("/appointments");
+        for(i=endTime1; i>=duration; i--) {
+          const et1 = Math.floor(i/60) + ":" + (i%60) + ":00";
+          const st1 = Math.floor((i-duration)/60) + ":" + ((i-duration)%60) + ":00";
+          console.log(st1, "           ", et1);
+          const chk = await Appointments.findAll({
+            where: {
+              startTime: { [Op.lt]: et1 },
+              endTime: { [Op.gt]: st1 },
+              uid : uid,
+            },
+          });
+          if(chk.length==0){
+            msg += st1 + " to " + et1 + " Early!"
+            console.log("***************************8**************You can schedule the nearest time slot : " + st1 + " to " + et1);
+            break;
+          }
+      }
+      request.flash("info", "You can schedule the next nearest available time slot with same duration : " + msg);
+      return response.redirect("/appointments");
       }
     await Appointments.create({
       name, startTime, endTime, uid : uid,
